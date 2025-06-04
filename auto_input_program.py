@@ -4,6 +4,7 @@ import pyautogui
 import time
 import threading
 import keyboard
+from pynput.keyboard import Controller as KeyboardController
 
 # Set PyAutoGUI failsafe and pause
 pyautogui.FAILSAFE = True
@@ -13,7 +14,7 @@ class AutoInputApp:
     def __init__(self, root):
         self.root = root
         self.root.title("Auto Mouse and Keyboard Input")
-        self.root.geometry("400x650")
+        self.root.geometry("400x700")
         
         # Variables
         self.running = False
@@ -26,6 +27,7 @@ class AutoInputApp:
         self.interval = tk.StringVar(value="1")
         self.key_states = [False] * 5  # Track toggle state for each key
         self.hotkey_handlers = [None] * 5  # Store hotkey handlers
+        self.keyboard_controller = KeyboardController()  # For low-level key simulation
         
         # GUI Elements
         tk.Label(root, text="Auto Mouse and Keyboard Input", font=("Arial", 14)).pack(pady=10)
@@ -125,6 +127,12 @@ class AutoInputApp:
         self.key_states = [False] * 5  # Reset states
         self.status_label.config(text="Hotkey Status: None")
     
+    def simulate_key(self, key):
+        # Simulate key press and release using pynput for better hotkey recognition
+        self.keyboard_controller.press(key)
+        time.sleep(0.05)  # Brief delay to ensure recognition
+        self.keyboard_controller.release(key)
+    
     def automation_loop(self):
         while self.running:
             mode = self.automation_mode.get()
@@ -157,7 +165,7 @@ class AutoInputApp:
                 for key_var in self.keys:
                     key = key_var.get().strip().lower()
                     if key:
-                        pyautogui.press(key)
+                        self.simulate_key(key)
                     
             time.sleep(float(self.interval.get()))
     
