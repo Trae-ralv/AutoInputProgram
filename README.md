@@ -93,7 +93,7 @@ Steps to create the .exe from source.
   - Install Microsoft Visual C++ Redistributable (microsoft.com).
   - Exclude `auto_input_program.exe` from antivirus.
 - **GUI Issues**:
-  - Increase height (e.g., `400x550`) if elements are cut off.
+  - Increase height (e.g., `400x650`) if elements are cut off.
 - **Hotkeys**:
   - Check F5/F6 conflicts.
 - **Microsoft Store Python**:

@@ -24,6 +24,8 @@ class AutoInputApp:
         self.fixed_y = tk.StringVar(value="500")
         self.keys = [tk.StringVar(value="") for _ in range(5)]
         self.interval = tk.StringVar(value="1")
+        self.key_states = [False] * 5  # Track toggle state for each key
+        self.hotkey_handlers = [None] * 5  # Store hotkey handlers
         
         # GUI Elements
         tk.Label(root, text="Auto Mouse and Keyboard Input", font=("Arial", 14)).pack(pady=10)
@@ -57,6 +59,10 @@ class AutoInputApp:
         # Interval Input
         tk.Label(root, text="Interval (seconds):").pack()
         tk.Entry(root, textvariable=self.interval).pack()
+        
+        # Status Label for Hotkey Feedback
+        self.status_label = tk.Label(root, text="Hotkey Status: None", wraplength=350)
+        self.status_label.pack(pady=5)
         
         # Buttons
         tk.Button(root, text="Start/Stop (F6)", command=self.toggle).pack(pady=10)
@@ -92,6 +98,33 @@ class AutoInputApp:
             tk.messagebox.showerror("Error", str(e))
             return False
     
+    def hotkey_callback(self, index):
+        # Toggle state for the key and update status
+        self.key_states[index] = not self.key_states[index]
+        key = self.keys[index].get().strip().lower()
+        state = "ON" if self.key_states[index] else "OFF"
+        self.status_label.config(text=f"Hotkey Status: Key '{key}' toggled {state}")
+    
+    def register_hotkeys(self):
+        # Register hotkeys for each valid key
+        for i, key_var in enumerate(self.keys):
+            key = key_var.get().strip().lower()
+            if key and key.isalpha() and len(key) == 1:
+                # Unregister existing hotkey if any
+                if self.hotkey_handlers[i]:
+                    keyboard.remove_hotkey(self.hotkey_handlers[i])
+                # Register new hotkey
+                self.hotkey_handlers[i] = keyboard.add_hotkey(key, lambda idx=i: self.hotkey_callback(idx))
+    
+    def unregister_hotkeys(self):
+        # Unregister all hotkeys
+        for i, handler in enumerate(self.hotkey_handlers):
+            if handler:
+                keyboard.remove_hotkey(handler)
+                self.hotkey_handlers[i] = None
+        self.key_states = [False] * 5  # Reset states
+        self.status_label.config(text="Hotkey Status: None")
+    
     def automation_loop(self):
         while self.running:
             mode = self.automation_mode.get()
@@ -107,7 +140,7 @@ class AutoInputApp:
                         pyautogui.click(x, y, button="right")
                     else:  # both
                         pyautogui.click(x, y, button="left")
-                        time.sleep(0.1)  # Small delay to distinguish clicks
+                        time.sleep(0.1)
                         pyautogui.click(x, y, button="right")
                 else:  # cursor
                     if click_type == "left":
@@ -132,9 +165,11 @@ class AutoInputApp:
         if not self.running:
             if self.validate_inputs():
                 self.running = True
+                self.register_hotkeys()
                 threading.Thread(target=self.automation_loop, daemon=True).start()
         else:
             self.running = False
+            self.unregister_hotkeys()
     
     def record_position(self):
         # Record current mouse position and update X, Y fields
